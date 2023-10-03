@@ -10,7 +10,7 @@ messages = [
 	{"role": "system", "content": "Using traditional chinese to warning."},
 	#{"role": "system", "content": "Giving some feedback on user content."},
 ]
-
+print("s")
 def chatbot(input):
 	if input:
 		messages.append({"role": "user", "content": input})
@@ -23,8 +23,8 @@ def chatbot(input):
 
 		return reply
 
-inputs = gr.inputs.Textbox(lines=7, label="Chat with AI")
-outputs = gr.outputs.Textbox(label="Reply")
+inputs = gr.Textbox(lines=7, label="Chat with AI")
+outputs = gr.Textbox(label="Reply")
 
 gr.Interface(fn=chatbot, inputs=inputs, outputs=outputs, title="報告檢核系統", description="請在此輸入要檢測的報告段落", theme="compact").launch(share=True)
 #compact
