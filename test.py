@@ -1,8 +1,7 @@
 import openai
 import gradio as gr
 
-#openai.api_key = ""
-#openai.api_key = ""
+
 openai.api_key = "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"
 
 messages = [
@@ -11,6 +10,9 @@ messages = [
 	#{"role": "system", "content": "Giving some feedback on user content."},
 ]
 print("s")
+
+
+
 def chatbot(input):
 	if input:
 		messages.append({"role": "user", "content": input})
