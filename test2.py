@@ -1,32 +1,31 @@
+import numpy as np
 import gradio as gr
 
 
-def sentence_builder(quantity, animal, countries, place, activity_list, morning):
-    return f"""The {quantity} {animal}s from {" and ".join(countries)} went to the {place} where they {" and ".join(activity_list)} until the {"morning" if morning else "night"}"""
+def flip_text(x):
+    return x[::-1]
 
 
-demo = gr.Interface(
-    sentence_builder,
-    [
-        gr.Slider(2, 20, value=4, label="Count", info="Choose between 2 and 20"),
-        gr.Dropdown(
-            ["cat", "dog", "bird"], label="Animal", info="Will add more animals later!"
-        ),
-        gr.CheckboxGroup(["USA", "Japan", "Pakistan"], label="Countries", info="Where are they from?"),
-        gr.Radio(["park", "zoo", "road"], label="Location", info="Where did they go?"),
-        gr.Dropdown(
-            ["ran", "swam", "ate", "slept"], value=["swam", "slept"], multiselect=True, label="Activity", info="Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed auctor, nisl eget ultricies aliquam, nunc nisl aliquet nunc, eget aliquam nisl nunc vel nisl."
-        ),
-        gr.Checkbox(label="Morning", info="Did they do it in the morning?"),
-    ],
-    "text",
-    examples=[
-        [2, "cat", ["Japan", "Pakistan"], "park", ["ate", "swam"], True],
-        [4, "dog", ["Japan"], "zoo", ["ate", "swam"], False],
-        [10, "bird", ["USA", "Pakistan"], "road", ["ran"], False],
-        [8, "cat", ["Pakistan"], "zoo", ["ate"], True],
-    ]
-)
+def flip_image(x):
+    return np.fliplr(x)
 
-if __name__ == "__main__":
-    demo.launch()
+
+with gr.Blocks() as demo:
+    gr.Markdown("Flip text or image files using this demo.")
+    with gr.Tab("Flip Text"):
+        text_input = gr.Textbox()
+        text_output = gr.Textbox()
+        text_button = gr.Button("Flip")
+    with gr.Tab("Flip Image"):
+        with gr.Row():
+            image_input = gr.Image()
+            image_output = gr.Image()
+        image_button = gr.Button("Flip")
+
+    with gr.Accordion("Open for More!"):
+        gr.Markdown("Look at me...")
+
+    text_button.click(flip_text, inputs=text_input, outputs=text_output)
+    image_button.click(flip_image, inputs=image_input, outputs=image_output)
+
+demo.launch()
