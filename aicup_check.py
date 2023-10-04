@@ -12,7 +12,7 @@ Passed = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 8: 0}
 def check(input_text, part):
     
     
-    reply = "adasdasds檢核通過"
+    reply = "adasdasds檢核通過"  #隨便假設的
     
     #更新通過紀錄Passed
     if "檢核通過" in reply:
