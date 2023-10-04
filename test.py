@@ -12,6 +12,8 @@ messages = [
 print("s")
 
 
+
+
 def chatbot(input):
 	if input:
 		messages.append({"role": "user", "content": input})
