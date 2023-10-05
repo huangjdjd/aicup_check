@@ -3,7 +3,7 @@ import gradio as gr
 
 #openai.api_key = ""
 #openai.api_key = ""
-openai.api_key = "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"
+openai.api_key = "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"
 
 messages = [
 	{"role": "system", "content": "Counting his current word count and warn if it is less that 500 words."},
@@ -22,9 +22,10 @@ def chatbot(input):
 		messages.append({"role": "assistant", "content": reply})
 
 		return reply
-
+ch=gr.Checkbox('de')
 inputs = gr.Textbox(lines=7, label="Chat with AI")
+input1 = gr.Textbox(lines=7, label="Chat with AI")
 outputs = gr.Textbox(label="Reply")
 
-gr.Interface(fn=chatbot, inputs=inputs, outputs=outputs, title="報告檢核系統", description="請在此輸入要檢測的報告段落", theme="compact").launch(share=True)
+gr.Interface(fn=chatbot, inputs=[inputs,ch], outputs=outputs, title="報告檢核系統", description="請在此輸入要檢測的報告段落", theme="compact").launch(share=True)
 #compact
