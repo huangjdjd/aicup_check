@@ -23,15 +23,27 @@ def check(input_text, part):
 
     return reply   #回傳AI的回覆
 
+#取得Passed dict裡面的值
 def getPassed(part):
     return Passed[part]
 
+#取得總進度
 def getProgress():
     progress = 0
     for i in range(1,8):
         progress += Passed[i]
         return progress/7
 
+#更新所有進度
+def updateValue():
+    
+    dict = {"完成度": getProgress(),
+                "壹、環境": getPassed(1), "貳、演算方法與模型架構": getPassed(2), "參、創新性": getPassed(3), 
+                "肆、資料處理": getPassed(4), "伍、訓練方式": getPassed(5), "陸、分析與結論": getPassed(6), "捌、使用的外部資源與參考文獻": getPassed(8)}
+    return dict
+    
+
+#主頁面
 with gr.Blocks() as demo:
     gr.Markdown(
     """
@@ -43,15 +55,14 @@ with gr.Blocks() as demo:
             
             label = gr.Label(
                 label="完成度",
-                value={"完成度": getProgress(),
-                "壹、環境": getPassed(1), "貳、演算方法與模型架構": getPassed(2), "參、創新性": getPassed(3), \
-                "肆、資料處理": getPassed(4), "伍、訓練方式": getPassed(5), "陸、分析與結論": getPassed(6), "捌、使用的外部資源與參考文獻": getPassed(8)},
+                value=updateValue(),
                 every=0.1,
                 container=True,
-                color="#778899",
                 show_label=True,
-                visible=True
+                visible=True,
                 )
+            
+            
             with gr.Blocks():
                 pass_text = gr.Textbox()
         with gr.Column(scale=3):
@@ -62,6 +73,7 @@ with gr.Blocks() as demo:
                 part = gr.Slider(1, 8, value=1, visible = False)
                 output = gr.Textbox(label="段落檢核結果")
                 check_btn.click(fn=check, inputs=[input,part], outputs=output)
+                
                 
             with gr.Tab(label="貳、演算方法與模型架構"):
                 input = gr.Textbox(max_lines=7, lines=7, label="說明演算法設計、模型架構與模型參數，包括可能使用的特殊處理方式。(400~1200字)")
