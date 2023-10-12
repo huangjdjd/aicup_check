@@ -5,7 +5,7 @@ import time
 openai.api_key = "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"
 
 #紀錄該段落是否已經通過檢測的dict，key 為段落；value 為是否通過(1為通過，0為未通過)
-Passed = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 7: 0, 8: 0}
+Passed = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 8: 0}
 
 #檢查用的function，input_text為要檢核的段落內容；part為第幾段
 #關鍵字: 檢核通過  (如果AI回覆為通過，則務必請AI在reply中加入繁體 "檢核通過" 以方便判定)
@@ -14,12 +14,14 @@ def check(input_text, part):
     
     reply = input_text   #隨便假設的
     
+    
     #更新通過紀錄Passed
     if "檢核通過" in reply:
         Passed[part] = 1
     else:
         Passed[part] = 0
     reply += str(Passed[part])
+    
 
     return reply   #回傳AI的回覆
 
@@ -37,11 +39,12 @@ def getProgress():
 #更新所有進度
 def updateValue():
     
-    dict = {"完成度": getProgress(),
+    dict = {"完成度": (getPassed(1) + getPassed(2) + getPassed(3) + getPassed(4) + getPassed(5) + getPassed(6) + getPassed(8)) / 7,
                 "壹、環境": getPassed(1), "貳、演算方法與模型架構": getPassed(2), "參、創新性": getPassed(3), 
                 "肆、資料處理": getPassed(4), "伍、訓練方式": getPassed(5), "陸、分析與結論": getPassed(6), "捌、使用的外部資源與參考文獻": getPassed(8)}
     return dict
     
+
 
 #主頁面
 with gr.Blocks() as demo:
@@ -52,19 +55,16 @@ with gr.Blocks() as demo:
     """)
     with gr.Row():
         with gr.Column(scale=1):
-            
-            label = gr.Label(
-                label="完成度",
-                value=updateValue(),
-                every=0.1,
-                container=True,
-                show_label=True,
-                visible=True,
-                )
-            
-            
-            with gr.Blocks():
-                pass_text = gr.Textbox()
+            labels = gr.Label(
+                    label="完成度",
+                    value=updateValue(),
+                    container=True,
+                    show_label=True,
+                    visible=True,
+                    
+                    )
+            labels.change(fn=updateValue,inputs=None,outputs=labels,every=0.1)
+                
         with gr.Column(scale=3):
             
             with gr.Tab(label="壹、環境"):
