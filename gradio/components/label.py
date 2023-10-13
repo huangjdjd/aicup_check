@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 import operator
-import warnings
 from pathlib import Path
 from typing import Callable, Literal
 
@@ -91,6 +90,15 @@ class Label(Changeable, Selectable, IOComponent, JSONSerializable):
             **kwargs,
         )
 
+    def get_config(self):
+        return {
+            "num_top_classes": self.num_top_classes,
+            "value": self.value,
+            "color": self.color,
+            "selectable": self.selectable,
+            **IOComponent.get_config(self),
+        }
+
     def postprocess(self, y: dict[str, float] | str | float | None) -> dict | None:
         """
         Parameters:
@@ -109,12 +117,17 @@ class Label(Changeable, Selectable, IOComponent, JSONSerializable):
                 y = y["confidences"]
                 y = {c["label"]: c["confidence"] for c in y}
             sorted_pred = sorted(y.items(), key=operator.itemgetter(1), reverse=True)
+            
+            sorted_pred = list(y.items())
+            
             if self.num_top_classes is not None:
                 sorted_pred = sorted_pred[: self.num_top_classes]
             return {
                 "label": sorted_pred[0][0],
                 "confidences": [
-                    {"label": pred[0], "confidence": pred[1]} for pred in sorted_pred
+                    {"label": pred[0], "confidence": pred[1]} for pred in sorted_pred[1:]
+                    # {"label": sorted_pred[0][0], "confidence": sorted_pred[0][1]}
+
                 ],
             }
         raise ValueError(
@@ -138,9 +151,6 @@ class Label(Changeable, Selectable, IOComponent, JSONSerializable):
         visible: bool | None = None,
         color: str | Literal[_Keywords.NO_VALUE] | None = _Keywords.NO_VALUE,
     ):
-        warnings.warn(
-            "Using the update method is deprecated. Simply return a new object instead, e.g. `return gr.Label(...)` instead of `return gr.Label.update(...)`."
-        )
         # If color is not specified (NO_VALUE) map it to None so that
         # it gets filtered out in postprocess. This will mean the color
         # will not be updated in the front-end

@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import warnings
 from typing import Literal
 
 import numpy as np
@@ -98,6 +97,17 @@ class AnnotatedImage(Selectable, IOComponent, JSONSerializable):
             **kwargs,
         )
 
+    def get_config(self):
+        return {
+            "show_legend": self.show_legend,
+            "value": self.value,
+            "height": self.height,
+            "width": self.width,
+            "color_map": self.color_map,
+            "selectable": self.selectable,
+            **IOComponent.get_config(self),
+        }
+
     @staticmethod
     def update(
         value: tuple[
@@ -116,9 +126,6 @@ class AnnotatedImage(Selectable, IOComponent, JSONSerializable):
         min_width: int | None = None,
         visible: bool | None = None,
     ):
-        warnings.warn(
-            "Using the update method is deprecated. Simply return a new object instead, e.g. `return gr.AnnotatedImage(...)` instead of `return gr.AnnotatedImage.update(...)`."
-        )
         updated_config = {
             "show_legend": show_legend,
             "height": height,

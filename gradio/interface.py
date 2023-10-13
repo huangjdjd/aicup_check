@@ -27,8 +27,7 @@ from gradio.components import (
 )
 from gradio.data_classes import InterfaceTypes
 from gradio.deprecation import warn_deprecation
-from gradio.events import Changeable, Streamable, Submittable, on
-from gradio.exceptions import RenderError
+from gradio.events import Changeable, Streamable, Submittable
 from gradio.flagging import CSVLogger, FlaggingCallback, FlagMethod
 from gradio.layouts import Column, Row, Tab, Tabs
 from gradio.pipelines import load_from_pipeline
@@ -38,8 +37,6 @@ set_documentation_group("interface")
 
 if TYPE_CHECKING:  # Only import for type checking (is False at runtime).
     from transformers.pipelines.base import Pipeline
-
-    from gradio.events import EventListenerMethod
 
 
 @document("launch", "load", "from_pipeline", "integrate", "queue")
@@ -251,10 +248,10 @@ class Interface(Blocks):
             self.cache_examples = False
 
         self.input_components = [
-            get_component_instance(i, unrender=True) for i in inputs  # type: ignore
+            get_component_instance(i, render=False) for i in inputs  # type: ignore
         ]
         self.output_components = [
-            get_component_instance(o, unrender=True) for o in outputs  # type: ignore
+            get_component_instance(o, render=False) for o in outputs  # type: ignore
         ]
 
         for component in self.input_components + self.output_components:
@@ -450,8 +447,7 @@ class Interface(Blocks):
                     stop_btn = stop_btn or stop_btn_2_out
                     flag_btns = flag_btns or flag_btns_out
 
-            if clear_btn is None:
-                raise RenderError("Clear button not rendered")
+            assert clear_btn is not None, "Clear button not rendered"
 
             self.attach_submit_events(submit_btn, stop_btn)
             self.attach_clear_events(
@@ -588,8 +584,7 @@ class Interface(Blocks):
                 if self.allow_flagging == "manual":
                     flag_btns = self.render_flag_btns()
                 elif self.allow_flagging == "auto":
-                    if submit_btn is None:
-                        raise RenderError("Submit button not rendered")
+                    assert submit_btn is not None, "Submit button not rendered"
                     flag_btns = [submit_btn]
 
                 if self.interpretation:
@@ -614,8 +609,7 @@ class Interface(Blocks):
     def attach_submit_events(self, submit_btn: Button | None, stop_btn: Button | None):
         if self.live:
             if self.interface_type == InterfaceTypes.OUTPUT_ONLY:
-                if submit_btn is None:
-                    raise RenderError("Submit button not rendered")
+                assert submit_btn is not None, "Submit button not rendered"
                 super().load(self.fn, None, self.output_components)
                 # For output-only interfaces, the user probably still want a "generate"
                 # button even if the Interface is live
@@ -630,24 +624,28 @@ class Interface(Blocks):
                     max_batch_size=self.max_batch_size,
                 )
             else:
-                events: list[EventListenerMethod] = []
                 for component in self.input_components:
                     if isinstance(component, Streamable) and component.streaming:
-                        events.append(component.stream)
-                    elif isinstance(component, Changeable):
-                        events.append(component.change)
-                on(
-                    events,
-                    self.fn,
-                    self.input_components,
-                    self.output_components,
-                    api_name=self.api_name,
-                    preprocess=not (self.api_mode),
-                    postprocess=not (self.api_mode),
-                )
+                        component.stream(
+                            self.fn,
+                            self.input_components,
+                            self.output_components,
+                            api_name=self.api_name,
+                            preprocess=not (self.api_mode),
+                            postprocess=not (self.api_mode),
+                        )
+                        continue
+                    if isinstance(component, Changeable):
+                        component.change(
+                            self.fn,
+                            self.input_components,
+                            self.output_components,
+                            api_name=self.api_name,
+                            preprocess=not (self.api_mode),
+                            postprocess=not (self.api_mode),
+                        )
         else:
-            if submit_btn is None:
-                raise RenderError("Submit button not rendered")
+            assert submit_btn is not None, "Submit button not rendered"
             fn = self.fn
             extra_output = []
 
@@ -656,61 +654,65 @@ class Interface(Blocks):
                 for component in self.input_components
                 if isinstance(component, Submittable)
             ]
+            predict_events = []
 
             if stop_btn:
                 extra_output = [submit_btn, stop_btn]
 
                 def cleanup():
-                    return [Button(visible=True), Button(visible=False)]
+                    return [Button.update(visible=True), Button.update(visible=False)]
 
-                predict_event = on(
-                    triggers,
-                    lambda: (
-                        Button(visible=False),
-                        Button(visible=True),
-                    ),
-                    inputs=None,
-                    outputs=[submit_btn, stop_btn],
-                    queue=False,
-                ).then(
-                    self.fn,
-                    self.input_components,
-                    self.output_components,
-                    api_name=self.api_name,
-                    scroll_to_output=True,
-                    preprocess=not (self.api_mode),
-                    postprocess=not (self.api_mode),
-                    batch=self.batch,
-                    max_batch_size=self.max_batch_size,
-                )
+                for i, trigger in enumerate(triggers):
+                    predict_event = trigger(
+                        lambda: (
+                            submit_btn.update(visible=False),
+                            stop_btn.update(visible=True),
+                        ),
+                        inputs=None,
+                        outputs=[submit_btn, stop_btn],
+                        queue=False,
+                    ).then(
+                        self.fn,
+                        self.input_components,
+                        self.output_components,
+                        api_name=self.api_name if i == 0 else None,
+                        scroll_to_output=True,
+                        preprocess=not (self.api_mode),
+                        postprocess=not (self.api_mode),
+                        batch=self.batch,
+                        max_batch_size=self.max_batch_size,
+                    )
+                    predict_events.append(predict_event)
 
-                predict_event.then(
-                    cleanup,
-                    inputs=None,
-                    outputs=extra_output,  # type: ignore
-                    queue=False,
-                )
+                    predict_event.then(
+                        cleanup,
+                        inputs=None,
+                        outputs=extra_output,  # type: ignore
+                        queue=False,
+                    )
 
                 stop_btn.click(
                     cleanup,
                     inputs=None,
                     outputs=[submit_btn, stop_btn],
-                    cancels=predict_event,
+                    cancels=predict_events,
                     queue=False,
                 )
             else:
-                on(
-                    triggers,
-                    fn,
-                    self.input_components,
-                    self.output_components,
-                    api_name=self.api_name,
-                    scroll_to_output=True,
-                    preprocess=not (self.api_mode),
-                    postprocess=not (self.api_mode),
-                    batch=self.batch,
-                    max_batch_size=self.max_batch_size,
-                )
+                for i, trigger in enumerate(triggers):
+                    predict_events.append(
+                        trigger(
+                            fn,
+                            self.input_components,
+                            self.output_components,
+                            api_name=self.api_name if i == 0 else None,
+                            scroll_to_output=True,
+                            preprocess=not (self.api_mode),
+                            postprocess=not (self.api_mode),
+                            batch=self.batch,
+                            max_batch_size=self.max_batch_size,
+                        )
+                    )
 
     def attach_clear_events(
         self,
@@ -728,7 +730,7 @@ class Interface(Blocks):
             ),  # type: ignore
             _js=f"""() => {json.dumps(
                 (
-                    [{'variant': None, 'visible': True, '__type__': 'update'}]
+                    [Column.update(visible=True)]
                     if self.interface_type
                         in [
                             InterfaceTypes.STANDARD,
@@ -737,7 +739,7 @@ class Interface(Blocks):
                         ]
                     else []
                 )
-                + ([{'variant': None, 'visible': False, '__type__': 'update'}] if self.interpretation else [])
+                + ([Column.update(visible=False)] if self.interpretation else [])
             )}
             """,
         )
@@ -793,7 +795,7 @@ class Interface(Blocks):
             assert isinstance(value, str)
             flag_method = FlagMethod(self.flagging_callback, label, value)
             flag_btn.click(
-                lambda: Button(value="Saving...", interactive=False),
+                lambda: Button.update(value="Saving...", interactive=False),
                 None,
                 flag_btn,
                 queue=False,
@@ -847,8 +849,8 @@ class Interface(Blocks):
 
     async def interpret_func(self, *args):
         return await self.interpret(list(args)) + [
-            Column(visible=False),
-            Column(visible=True),
+            Column.update(visible=False),
+            Column.update(visible=True),
         ]
 
     async def interpret(self, raw_input: list[Any]) -> list[Any]:

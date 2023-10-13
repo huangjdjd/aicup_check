@@ -30,7 +30,6 @@ from gradio.components import (
     Dropdown,
     DuplicateButton,
     File,
-    FileExplorer,
     Gallery,
     Highlight,
     HighlightedText,
@@ -61,7 +60,7 @@ from gradio.components import (
     component,
 )
 from gradio.deploy_space import deploy
-from gradio.events import LikeData, SelectData, on
+from gradio.events import LikeData, SelectData
 from gradio.exceptions import Error
 from gradio.external import load
 from gradio.flagging import (
