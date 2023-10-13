@@ -1,6 +1,7 @@
 import openai
-import gradio as gr
 import time
+import gradio as gr
+
 
 openai.api_key = "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"
 
@@ -31,15 +32,13 @@ def getPassed(part):
 
 #取得總進度
 def getProgress():
-    progress = 0
-    for i in range(1,8):
-        progress += Passed[i]
-        return progress/7
+    progress = str(int((getPassed(1) + getPassed(2) + getPassed(3) + getPassed(4) + getPassed(5) + getPassed(6) + getPassed(8)) / 7 * 100))
+    return progress
 
 #更新所有進度
 def updateValue():
     
-    dict = {"完成度": (getPassed(1) + getPassed(2) + getPassed(3) + getPassed(4) + getPassed(5) + getPassed(6) + getPassed(8)) / 7,
+    dict = {"完成度" + getProgress() + "%": 1, 
                 "壹、環境": getPassed(1), "貳、演算方法與模型架構": getPassed(2), "參、創新性": getPassed(3), 
                 "肆、資料處理": getPassed(4), "伍、訓練方式": getPassed(5), "陸、分析與結論": getPassed(6), "捌、使用的外部資源與參考文獻": getPassed(8)}
     return dict
@@ -59,11 +58,11 @@ with gr.Blocks() as demo:
                     label="完成度",
                     value=updateValue(),
                     container=True,
-                    show_label=True,
+                    show_label=False,
                     visible=True,
                     
                     )
-            labels.change(fn=updateValue,inputs=None,outputs=labels,every=0.1)
+            labels.change(fn=updateValue,inputs=None,outputs=labels,every=0.1,)
                 
         with gr.Column(scale=3):
             
