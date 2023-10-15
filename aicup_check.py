@@ -80,24 +80,8 @@ def run(prompt):
         result = response.json() #['results'][0]['text']
         return result
         #print(prompt + result)
-# if __name__ == '__main__':
-    examples = [
-      #"能告訴我如何申請自有雲服務嗎？",
-      "告訴我recursion？",
-      "告訴我資料結構的stack的原理？",
-      "請問如何申請自有雲服務？",
-      "",
 
-    ]
-    for exam in examples:
-      prompt = f"""<bos>Human
-{exam}<eos>
-<bos>Assistant"""
-    #   print(f"{bcolors.OKBLUE}Prompt:{bcolors.HEADER} {exam}{bcolors.ENDC}")
-      result = run(prompt)
-      response = result['results'][0]['text']
-    #   print(f"{bcolors.OKBLUE}Result:{bcolors.HEADER} {response}{bcolors.ENDC}")
-    #   print(f'--'*20)
+
 
 #紀錄該段落是否已經通過檢測的dict，key 為段落；value 為是否通過(1為通過，0為未通過)
 Passed = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 8: 0}
@@ -105,12 +89,14 @@ Passed = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 8: 0}
 #檢查用的function，input_text為要檢核的段落內容；part為第幾段
 #關鍵字: 檢核通過  (如果AI回覆為通過，則務必請AI在reply中加入繁體 "檢核通過" 以方便判定)
 def check(input_text, part):
-    reply = input_text 
+    parts=[]
+    if part==1:
+        parts.append("1.字數大於100 2. ")
     examples = [
       #"能告訴我如何申請自有雲服務嗎？",
-      "請說明使用的作業系統、語言、套件(函式庫)、預訓練模型、額外資料集等。如使用預訓練模型及額外資料集，請逐一列出來源，請看接下來的文字有沒有符合上述所說的條件，如果有符合回應檢核通過，沒有符合回應請回應檢核不通過" +" :"+reply ,
-      "告訴我資料結構的stack的原理？" +reply,
-      "請問如何申請自有雲服務？" +reply,
+      "等一下將會輸入一些條件與一個段落，請你幫我檢測輸入的段落有沒有符合條件。輸入的格式為：條件  ｜  段落（條件與段落中間以“｜”分隔）。如果該段落符合條件，請回覆“檢核通過”這四個繁體中文字，如果沒有通過，請在你回覆的一開始加入“檢核未通過” "+input_text ,
+      "告訴我資料結構的stack的原理？" ,
+      "請問如何申請自有雲服務？" ,
       "",
 
     ]
@@ -123,12 +109,8 @@ def check(input_text, part):
     <bos>Assistant"""
         result = run(prompt)
         response = result['results'][0]['text']
-
-    
-    
-    
     #更新通過紀錄Passed
-    if "檢核通過" in reply:
+    if "檢核通過" in response:
         Passed[part] = 1
     else:
         Passed[part] = 0
