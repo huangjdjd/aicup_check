@@ -89,12 +89,12 @@ Passed = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 8: 0}
 #檢查用的function，input_text為要檢核的段落內容；part為第幾段
 #關鍵字: 檢核通過  (如果AI回覆為通過，則務必請AI在reply中加入繁體 "檢核通過" 以方便判定)
 def check(input_text, part):
-    parts=[]
+    conditions=[]
     if part==1:
-        parts.append("1.字數大於100 2. ")
+        conditions.append("1.字數大於100 2.文字裡面有沒有說明使用的作業系統 ")
     examples = [
       #"能告訴我如何申請自有雲服務嗎？",
-      "等一下將會輸入一些條件與一個段落，請你幫我檢測輸入的段落有沒有符合條件。輸入的格式為：條件  ｜  段落（條件與段落中間以“｜”分隔）。如果該段落符合條件，請回覆“檢核通過”這四個繁體中文字，如果沒有通過，請在你回覆的一開始加入“檢核未通過” "+input_text ,
+      "等一下將會輸入一些條件與一個段落，請你幫我檢測輸入的段落有沒有符合條件。輸入的格式為：條件  ｜  段落（條件與段落中間以“｜”分隔）。如果該段落符合條件，請回覆“檢核通過”這四個繁體中文字，如果沒有通過，請在你回覆的一開始加入“檢核未通過” \n"+conditions[0]+"|"+input_text ,
       "告訴我資料結構的stack的原理？" ,
       "請問如何申請自有雲服務？" ,
       "",
@@ -102,13 +102,13 @@ def check(input_text, part):
     ]
     # for exam in examples:
     
-    if part==1:
-        prompt = f"""<bos>Human
+    
+    prompt = f"""<bos>Human
 
-        {examples[0]}<eos>
-    <bos>Assistant"""
-        result = run(prompt)
-        response = result['results'][0]['text']
+    {examples[1]}<eos>
+<bos>Assistant"""
+    result = run(prompt)
+    response = result['results'][0]['text']
     #更新通過紀錄Passed
     if "檢核通過" in response:
         Passed[part] = 1
