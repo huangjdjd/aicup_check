@@ -1,6 +1,7 @@
 import openai
 import gradio as gr
 
+
 openai.api_key = "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"
 
 messages = [
@@ -20,9 +21,10 @@ def chatbot(input):
 		messages.append({"role": "assistant", "content": reply})
 
 		return reply
-
+ch=gr.Checkbox('de')
 inputs = gr.Textbox(lines=7, label="Chat with AI")
+input1 = gr.Textbox(lines=7, label="Chat with AI")
 outputs = gr.Textbox(label="Reply")
 
-gr.Interface(fn=chatbot, inputs=inputs, outputs=outputs, title="報告檢核系統", description="請在此輸入要檢測的報告段落", theme="compact").launch(share=True)
+gr.Interface(fn=chatbot, inputs=[inputs,ch], outputs=outputs, title="報告檢核系統", description="請在此輸入要檢測的報告段落", theme="compact").launch(share=True)
 #compact

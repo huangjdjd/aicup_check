@@ -81,18 +81,20 @@ def run(prompt):
         #print(prompt + result)
 
 
-if __name__ == '__main__':
-    examples = [
-      #"能告訴我如何申請自有雲服務嗎？",
-      "請問如何申請自有雲服務？",
-      "Eduroam驗證服務是指什麼呢？",
-    ]
-    for exam in examples:
-      prompt = f"""<bos>Human
-{exam}<eos>
-<bos>Assistant"""
-      print(f"{bcolors.OKBLUE}Prompt:{bcolors.HEADER} {exam}{bcolors.ENDC}")
-      result = run(prompt)
-      response = result['results'][0]['text']
-      print(f"{bcolors.OKBLUE}Result:{bcolors.HEADER} {response}{bcolors.ENDC}")
-      print(f'--'*20)
+# if __name__ == '__main__':
+examples = [
+  #"能告訴我如何申請自有雲服務嗎？",
+  "告訴我recursion？",
+  "告訴我資料結構的stack的原理？",
+]
+    # for exam in examples:
+prompt = f"""<bos>Human
+# {examples[1]}<eos>
+# <bos>Assistant"""
+      # print(f"{bcolors.OKBLUE}Prompt:{bcolors.HEADER} {exam}{bcolors.ENDC}")
+result = run(prompt)
+response = result['results'][0]['text']
+      # print(response+"a")
+      # print(f"{bcolors.OKBLUE}Result:{bcolors.HEADER} {response}{bcolors.ENDC}")
+      # print(f'--'*20)
+print(response)

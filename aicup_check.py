@@ -1,9 +1,103 @@
-import openai
+
 import time
 import gradio as gr
+import requests
+# For local streaming, the websockets are hosted without ssl - http://
+HOST = 'localhost:5000'
+URI = f'http://203.145.216.157:58108/api/v1/generate'
 
+# For reverse-proxied streaming, the remote will likely host with ssl - https://
+# URI = 'https://your-uri-here.trycloudflare.com/api/v1/generate'
 
-openai.api_key = "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"
+class Promper:
+  def __init__(self, template: str='', pattern: str=None):
+    self.template = template
+    self.pattern = pattern
+    self.inputs = self.extract()
+    self.records = []
+
+  def extract():
+    print(self.template, self.pattern)
+    return None
+
+class bcolors:
+    HEADER = '\033[95m'
+    OKBLUE = '\033[94m'
+    OKCYAN = '\033[96m'
+    OKGREEN = '\033[92m'
+    WARNING = '\033[93m'
+    FAIL = '\033[91m'
+    ENDC = '\033[0m'
+    BOLD = '\033[1m'
+    UNDERLINE = '\033[4m'
+
+def run(prompt):
+    request = {
+        'prompt': prompt,
+        'max_new_tokens': 1024,
+        'auto_max_new_tokens': False,
+        'max_tokens_second': 0,
+
+        # Generation params. If 'preset' is set to different than 'None', the values
+        # in presets/preset-name.yaml are used instead of the individual numbers.
+        'preset': 'None',
+        'do_sample': True,
+        'temperature': 0.7,
+        'top_p': 0.9,
+        'typical_p': 1,
+        'epsilon_cutoff': 0,  # In units of 1e-4
+        'eta_cutoff': 0,  # In units of 1e-4
+        'tfs': 1,
+        'top_a': 0,
+        'repetition_penalty': 1.18,
+        'repetition_penalty_range': 0,
+        'top_k': 40,
+        'min_length': 0,
+        'no_repeat_ngram_size': 0,
+        'num_beams': 1,
+        'penalty_alpha': 0,
+        'length_penalty': 1,
+        'early_stopping': False,
+        'mirostat_mode': 0,
+        'mirostat_tau': 5,
+        'mirostat_eta': 0.1,
+        'grammar_string': '',
+        'guidance_scale': 1,
+        'negative_prompt': '',
+
+        'seed': -1,
+        'add_bos_token': True,
+        'truncation_length': 2048,
+        'ban_eos_token': False,
+        'custom_token_bans': '',
+        'skip_special_tokens': True,
+        'stopping_strings': []
+    }
+
+    response = requests.post(URI, json=request)
+
+    if response.status_code == 200:
+        result = response.json() #['results'][0]['text']
+        return result
+        #print(prompt + result)
+# if __name__ == '__main__':
+    examples = [
+      #"能告訴我如何申請自有雲服務嗎？",
+      "告訴我recursion？",
+      "告訴我資料結構的stack的原理？",
+      "請問如何申請自有雲服務？",
+      "",
+
+    ]
+    for exam in examples:
+      prompt = f"""<bos>Human
+{exam}<eos>
+<bos>Assistant"""
+    #   print(f"{bcolors.OKBLUE}Prompt:{bcolors.HEADER} {exam}{bcolors.ENDC}")
+      result = run(prompt)
+      response = result['results'][0]['text']
+    #   print(f"{bcolors.OKBLUE}Result:{bcolors.HEADER} {response}{bcolors.ENDC}")
+    #   print(f'--'*20)
 
 #紀錄該段落是否已經通過檢測的dict，key 為段落；value 為是否通過(1為通過，0為未通過)
 Passed = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 8: 0}
@@ -11,9 +105,26 @@ Passed = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 8: 0}
 #檢查用的function，input_text為要檢核的段落內容；part為第幾段
 #關鍵字: 檢核通過  (如果AI回覆為通過，則務必請AI在reply中加入繁體 "檢核通過" 以方便判定)
 def check(input_text, part):
+    reply = input_text 
+    examples = [
+      #"能告訴我如何申請自有雲服務嗎？",
+      "請說明使用的作業系統、語言、套件(函式庫)、預訓練模型、額外資料集等。如使用預訓練模型及額外資料集，請逐一列出來源，請看接下來的文字有沒有符合上述所說的條件，如果有符合回應檢核通過，沒有符合回應請回應檢核不通過" +" :"+reply ,
+      "告訴我資料結構的stack的原理？" +reply,
+      "請問如何申請自有雲服務？" +reply,
+      "",
+
+    ]
+    # for exam in examples:
     
+    if part==1:
+        prompt = f"""<bos>Human
+
+        {examples[0]}<eos>
+    <bos>Assistant"""
+        result = run(prompt)
+        response = result['results'][0]['text']
+
     
-    reply = input_text   #隨便假設的
     
     
     #更新通過紀錄Passed
@@ -21,10 +132,8 @@ def check(input_text, part):
         Passed[part] = 1
     else:
         Passed[part] = 0
-    reply += str(Passed[part])
-    
-
-    return reply   #回傳AI的回覆
+    # str(response)
+    return str(response)  #回傳AI的回覆
 
 #取得Passed dict裡面的值
 def getPassed(part):
