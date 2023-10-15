@@ -84,8 +84,13 @@ def run(prompt):
 if __name__ == '__main__':
     examples = [
       #"能告訴我如何申請自有雲服務嗎？",
+
       "告訴我recursion？",
       "告訴我stack的原理？",
+
+      "請問如何申請自有雲服務？",
+      "Eduroam驗證服務是指什麼呢？",
+
     ]
     for exam in examples:
       prompt = f"""<bos>Human
