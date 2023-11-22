@@ -1,40 +1,27 @@
-
-import time
 import gradio as gr
 import requests
-# For local streaming, the websockets are hosted without ssl - http://
-HOST = 'localhost:5000'
-URI = f'http://203.145.216.157:58108/api/v1/generate'
+import asyncio
+import json
+import sys
+
+try:
+    import websockets
+except ImportError:
+    print("Websockets package not found. Make sure it's installed.")
+
+
+# For local streaming, the websockets are hosted without ssl - ws://
+HOST = '203.145.216.157:60000'
+URI = f'ws://{HOST}/api/v1/stream'
 
 # For reverse-proxied streaming, the remote will likely host with ssl - https://
 # URI = 'https://your-uri-here.trycloudflare.com/api/v1/generate'
 
-class Promper:
-  def __init__(self, template: str='', pattern: str=None):
-    self.template = template
-    self.pattern = pattern
-    self.inputs = self.extract()
-    self.records = []
-
-  def extract():
-    print(self.template, self.pattern)
-    return None
-
-class bcolors:
-    HEADER = '\033[95m'
-    OKBLUE = '\033[94m'
-    OKCYAN = '\033[96m'
-    OKGREEN = '\033[92m'
-    WARNING = '\033[93m'
-    FAIL = '\033[91m'
-    ENDC = '\033[0m'
-    BOLD = '\033[1m'
-    UNDERLINE = '\033[4m'
-
-def run(prompt):
+async def run(context):
+    # Note: the selected defaults change from time to time.
     request = {
-        'prompt': prompt,
-        'max_new_tokens': 1024,
+        'prompt': context,
+        'max_new_tokens': 250,
         'auto_max_new_tokens': False,
         'max_tokens_second': 0,
 
@@ -43,7 +30,7 @@ def run(prompt):
         'preset': 'None',
         'do_sample': True,
         'temperature': 0.7,
-        'top_p': 0.9,
+        'top_p': 0.1,
         'typical_p': 1,
         'epsilon_cutoff': 0,  # In units of 1e-4
         'eta_cutoff': 0,  # In units of 1e-4
@@ -74,14 +61,27 @@ def run(prompt):
         'stopping_strings': []
     }
 
-    response = requests.post(URI, json=request)
+    async with websockets.connect(URI, ping_interval=None) as websocket:
+        await websocket.send(json.dumps(request))
 
-    if response.status_code == 200:
-        result = response.json() #['results'][0]['text']
-        return result
-        #print(prompt + result)
+        yield context  # Remove this if you just want to see the reply
+
+        while True:
+            incoming_data = await websocket.recv()
+            incoming_data = json.loads(incoming_data)
+
+            match incoming_data['event']:
+                case 'text_stream':
+                    yield incoming_data['text']
+                case 'stream_end':
+                    return
 
 
+async def print_response_stream(prompt):
+    async for response in run(prompt):   
+        print(response, end='')
+        sys.stdout.flush()  # If we don't flush, we won't see tokens in realtime.
+    
 
 #紀錄該段落是否已經通過檢測的dict，key 為段落；value 為是否通過(1為通過，0為未通過)
 Passed = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 8: 0}
@@ -99,19 +99,27 @@ def check(input_text, part):
                "",
                "1.字數為300-1200字 2.內容規定：參考文獻請以APA格式為主"
                ]
-    examples = [
-      "等一下將會輸入一些條件與一個段落，請你幫我檢測輸入的段落有沒有符合條件。 \
-      輸入的格式為：條件  +  段落（條件與段落中間以“+”分隔）。 \
-      如果該段落符合條件，請回覆“檢核通過”這四個繁體中文字， \
-      如果沒有通過，請在你回覆的一開始加入“檢核未通過” \
-      輸入開始: "  
-      + condition[part] + "+" + input_text
-    ]
-    prompt = f"""<bos>Human
-    {examples[0]}<eos>
+    # prompt = [
+    #   "等一下將會輸入一些條件與一個段落，請你幫我檢測輸入的段落有沒有符合條件。 \
+    #   輸入的格式為：條件  +  段落（條件與段落中間以“+”分隔）。 \
+    #   如果該段落符合條件，請回覆“檢核通過”這四個繁體中文字， \
+    #   如果沒有通過，請在你回覆的一開始加入“檢核未通過” \
+    #   輸入開始: "  
+    #   + condition[part] + "+" + input_text
+    # ]
+    # prompt = "地球體積"
+    from argparse import ArgumentParser
+    parser = ArgumentParser(prog='General debug things')
+    parser.add_argument('--msg', type=str)
+    args = parser.parse_args()
+    
+    template = f"""<bos>Human
+{input_text}<eos>
 <bos>Assistant"""
-    result = run(prompt)
-    response = result['results'][0]['text']
+    # prompt = "In order to make homemade bread, follow these steps:\n1)"
+    # response = asyncio.run(print_response_stream(template))
+    response = run(input_text)
+    # ---------------------------------------------
     
     #更新通過紀錄Passed
     if "檢核通過" in response:
