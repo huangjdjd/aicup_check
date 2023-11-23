@@ -79,9 +79,20 @@ async def run(context):
 
 
 async def print_response_stream(prompt):
+
+    answer=""
+    async for response in run(prompt):   
+        # print(response,end='')
+        answer+=response
+    # print(answer+"44444")
+    return answer
+        # return response
+        # sys.stdout.flush()  # If we don't flush, we won't see tokens in realtime.
+
     async for response in run(prompt):   
         print(response, end='')
         sys.stdout.flush()  # If we don't flush, we won't see tokens in realtime.
+
     
 
 #紀錄該段落是否已經通過檢測的dict，key 為段落；value 為是否通過(1為通過，0為未通過)
@@ -100,6 +111,16 @@ def check(input_text, part):
                "",
                "1.字數為300-1200字 2.內容規定：參考文獻請以APA格式為主"
                ]
+
+    prompt = [
+      "等一下將會輸入一些條件與一個段落，請你幫我檢測輸入的段落有沒有符合條件。 \
+      輸入的格式為：條件  +  段落（條件與段落中間以“+”分隔）。 \
+      如果該段落符合條件，請回覆“檢核通過”這四個繁體中文字， \
+      如果沒有通過，請在你回覆的一開始加入“檢核未通過” \
+      輸入開始: "  
+      + condition[part] + "+" + input_text
+    ]
+
     # prompt = [
     #   "等一下將會輸入一些條件與一個段落，請你幫我檢測輸入的段落有沒有符合條件。 \
     #   輸入的格式為：條件  +  段落（條件與段落中間以“+”分隔）。 \
@@ -108,11 +129,13 @@ def check(input_text, part):
     #   輸入開始: "  
     #   + condition[part] + "+" + input_text
     # ]
+
     # prompt = "地球體積"
     from argparse import ArgumentParser
     parser = ArgumentParser(prog='General debug things')
     parser.add_argument('--msg', type=str)
     args = parser.parse_args()
+
     
     template = f"""<bos>Human
 {input_text}<eos>
@@ -121,7 +144,18 @@ def check(input_text, part):
     # response = asyncio.run(print_response_stream(template))
     response = run(input_text)
     # ---------------------------------------------
+
     
+    template = f"""<bos>Human
+{prompt[0]}<eos>
+<bos>Assistant"""
+    # prompt = "In order to make homemade bread, follow these steps:\n1)"
+    # response = asyncio.run(print_response_stream(template))
+    # print("11 "+prompt[0]+" 11")
+    # prompt[0]="解釋下面的文字"+input_text
+    response=asyncio.run(print_response_stream(prompt[0]))
+    print(response+"123")
+    # ---------------------------------------------
     #更新通過紀錄Passed
     if "檢核通過" in response:
         Passed[part] = 1

@@ -86,6 +86,7 @@ condition = [" ",
                "1.字數為100-800字  2.有提到使用的作業系統、語言、套件(函式庫)、預訓練模型、額外資料集等",
                ]
 examples = [
+
   "等一下將會輸入一些條件與一個段落，請你幫我檢測輸入的段落有沒有符合條件。 \
   輸入的格式為：條件  +  段落（條件與段落中間以“+”分隔）。 \
   如果該段落符合條件，請回覆“檢核通過”這四個繁體中文字， \
@@ -93,15 +94,12 @@ examples = [
   你只能回答“檢核通過”或“檢核未通過”。輸入開始 : "  
   + condition[1] + "+" + "aegfksnflehf"
   
+
 ]
-    # for exam in examples:
 prompt = f"""<bos>Human
 # {examples[0]}<eos>
 # <bos>Assistant"""
-      # print(f"{bcolors.OKBLUE}Prompt:{bcolors.HEADER} {exam}{bcolors.ENDC}")
 result = run(prompt)
 response = result['results'][0]['text']
-      # print(response+"a")
-      # print(f"{bcolors.OKBLUE}Result:{bcolors.HEADER} {response}{bcolors.ENDC}")
-      # print(f'--'*20)
+
 print(response)
