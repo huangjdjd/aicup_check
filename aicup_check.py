@@ -4,6 +4,7 @@ import asyncio
 import json
 import sys
 
+
 try:
     import websockets
 except ImportError:
