@@ -4,7 +4,6 @@ import asyncio
 import json
 import sys
 
-
 try:
     import websockets
 except ImportError:
@@ -115,12 +114,12 @@ def check(input_text, part):
     prompt = [
       "等一下將會輸入一些條件與一個段落，請你幫我檢測輸入的段落有沒有符合條件。 \
       輸入的格式為：條件  +  段落（條件與段落中間以“+”分隔）。 \
-      如果該段落符合條件，請回覆“檢核通過”， \
+      如果該段落符合條件，請回覆“檢核通過”這四個繁體中文字， \
       如果沒有通過，請在你回覆的一開始加入“檢核未通過” \
       輸入開始: "  
       + condition[part] + "+" + input_text
     ]
-    # prompt = "回答以下問題: "+input_text
+
     # prompt = [
     #   "等一下將會輸入一些條件與一個段落，請你幫我檢測輸入的段落有沒有符合條件。 \
     #   輸入的格式為：條件  +  段落（條件與段落中間以“+”分隔）。 \
@@ -130,7 +129,7 @@ def check(input_text, part):
     #   + condition[part] + "+" + input_text
     # ]
 
-    # prompt = "地球體積"
+    prompt = input_text
     from argparse import ArgumentParser
     parser = ArgumentParser(prog='General debug things')
     parser.add_argument('--msg', type=str)
@@ -138,11 +137,11 @@ def check(input_text, part):
 
     
     template = f"""<bos>Human
-{prompt[0]}<eos>
+{input_text}<eos>
 <bos>Assistant"""
     # prompt = "In order to make homemade bread, follow these steps:\n1)"
     # response = asyncio.run(print_response_stream(template))
-    response = run(prompt)
+    response = run(input_text)
     # ---------------------------------------------
 
     
@@ -153,7 +152,7 @@ def check(input_text, part):
     # response = asyncio.run(print_response_stream(template))
     # print("11 "+prompt[0]+" 11")
     # prompt[0]="解釋下面的文字"+input_text
-    response=asyncio.run(print_response_stream(prompt))
+    response=asyncio.run(print_response_stream(prompt[0]))
     print(response+"123")
     # ---------------------------------------------
     #更新通過紀錄Passed
