@@ -117,17 +117,8 @@ def check(input_text, part):
       如果該段落符合條件，請回覆“檢核通過”這四個繁體中文字， \
       如果沒有通過，請在你回覆的一開始加入“檢核未通過” \
       輸入開始: "  
-      + condition[part] + "+" + input_text
+      + condition[part] + " + " + input_text
     ]
-
-    # prompt = [
-    #   "等一下將會輸入一些條件與一個段落，請你幫我檢測輸入的段落有沒有符合條件。 \
-    #   輸入的格式為：條件  +  段落（條件與段落中間以“+”分隔）。 \
-    #   如果該段落符合條件，請回覆“檢核通過”這四個繁體中文字， \
-    #   如果沒有通過，請在你回覆的一開始加入“檢核未通過” \
-    #   輸入開始: "  
-    #   + condition[part] + "+" + input_text
-    # ]
 
     # prompt = "地球體積"
     from argparse import ArgumentParser
@@ -141,19 +132,19 @@ def check(input_text, part):
 <bos>Assistant"""
     # prompt = "In order to make homemade bread, follow these steps:\n1)"
     # response = asyncio.run(print_response_stream(template))
-    response = run(input_text)
+    # response = run(input_text)
     # ---------------------------------------------
 
-    
+    # prompt[0]="請回答下面的文字"+input_text
     template = f"""<bos>Human
 {prompt[0]}<eos>
 <bos>Assistant"""
     # prompt = "In order to make homemade bread, follow these steps:\n1)"
     # response = asyncio.run(print_response_stream(template))
     # print("11 "+prompt[0]+" 11")
-    # prompt[0]="解釋下面的文字"+input_text
+    
     response=asyncio.run(print_response_stream(prompt[0]))
-    print(response+"123")
+    print(prompt[0]+"123")
     # ---------------------------------------------
     #更新通過紀錄Passed
     if "檢核通過" in response:
@@ -255,4 +246,5 @@ with gr.Blocks() as demo:
         
     
         
-demo.queue().launch(share=True)
+if __name__ == "__main__":
+    demo.queue(max_size=20).launch(share=True)
