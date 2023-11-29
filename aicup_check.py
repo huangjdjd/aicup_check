@@ -1,5 +1,6 @@
 import gradio as gr
 import requests
+from typing import Iterator
 import asyncio
 import json
 import sys
@@ -14,31 +15,33 @@ except ImportError:
 HOST = '203.145.216.157:60000'
 URI = f'ws://{HOST}/api/v1/stream'
 
+
 # For reverse-proxied streaming, the remote will likely host with ssl - https://
 # URI = 'https://your-uri-here.trycloudflare.com/api/v1/generate'
 
 async def run(context):
+
     # Note: the selected defaults change from time to time.
     request = {
         'prompt': context,
-        'max_new_tokens': 250,
+        'max_new_tokens': 250,# 250,
         'auto_max_new_tokens': False,
         'max_tokens_second': 0,
-
+ 
         # Generation params. If 'preset' is set to different than 'None', the values
         # in presets/preset-name.yaml are used instead of the individual numbers.
         'preset': 'None',
-        'do_sample': True,
-        'temperature': 0.7,
-        'top_p': 0.1,
+        'do_sample': False,
+        'temperature':0.7,#0.7,
+        'top_p': 0.1,#0.1,
         'typical_p': 1,
         'epsilon_cutoff': 0,  # In units of 1e-4
         'eta_cutoff': 0,  # In units of 1e-4
         'tfs': 1,
         'top_a': 0,
-        'repetition_penalty': 1.18,
+        'repetition_penalty': 1.18,#1.18,
         'repetition_penalty_range': 0,
-        'top_k': 40,
+        'top_k': 40, #40,
         'min_length': 0,
         'no_repeat_ngram_size': 0,
         'num_beams': 1,
@@ -51,7 +54,7 @@ async def run(context):
         'grammar_string': '',
         'guidance_scale': 1,
         'negative_prompt': '',
-
+ 
         'seed': -1,
         'add_bos_token': True,
         'truncation_length': 2048,
@@ -64,7 +67,7 @@ async def run(context):
     async with websockets.connect(URI, ping_interval=None) as websocket:
         await websocket.send(json.dumps(request))
 
-        yield context  # Remove this if you just want to see the reply
+        # yield context  # Remove this if you just want to see the reply
 
         while True:
             incoming_data = await websocket.recv()
@@ -75,8 +78,6 @@ async def run(context):
                     yield incoming_data['text']
                 case 'stream_end':
                     return
-
-
 async def print_response_stream(prompt):
 
     answer=""
@@ -92,7 +93,7 @@ async def print_response_stream(prompt):
         print(response, end='')
         sys.stdout.flush()  # If we don't flush, we won't see tokens in realtime.
 
-    
+
 
 #紀錄該段落是否已經通過檢測的dict，key 為段落；value 為是否通過(1為通過，0為未通過)
 Passed = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 8: 0}
@@ -112,14 +113,14 @@ def check(input_text, part):
                ]
 
     prompt = [
-      "等一下將會輸入一些條件與一個段落，請你幫我檢測輸入的段落有沒有符合條件。 \
+        "等一下將會輸入一些條件與一個段落，請你幫我檢測輸入的段落有沒有符合條件。 \
       輸入的格式為：條件  +  段落（條件與段落中間以“+”分隔）。 \
-      如果該段落符合條件，請回覆“檢核通過”這四個繁體中文字， \
-      如果沒有通過，請在你回覆的一開始加入“檢核未通過” \
-      輸入開始: "  
+      如果該段落符合條件，請回覆“檢核成功”， \
+      如果沒有通過，請回覆“檢核失敗” \
+      輸入開始:  1.字數為100-800字  2.有提到使用的作業系統、語言、套件(函式庫)、預訓練模型、額外資料集等 3.如提到使用預訓練模型及額外資料集，需逐一列出來源 + "  
       + condition[part] + " + " + input_text
     ]
-
+    
     # prompt = "地球體積"
     from argparse import ArgumentParser
     parser = ArgumentParser(prog='General debug things')
@@ -127,27 +128,14 @@ def check(input_text, part):
     args = parser.parse_args()
 
     
-    template = f"""<bos>Human
-{input_text}<eos>
-<bos>Assistant"""
-    # prompt = "In order to make homemade bread, follow these steps:\n1)"
-    # response = asyncio.run(print_response_stream(template))
-    # response = run(input_text)
-    # ---------------------------------------------
-
-    # prompt[0]="請回答下面的文字"+input_text
-    template = f"""<bos>Human
-{prompt[0]}<eos>
-<bos>Assistant"""
-    # prompt = "In order to make homemade bread, follow these steps:\n1)"
-    # response = asyncio.run(print_response_stream(template))
-    # print("11 "+prompt[0]+" 11")
-    
-    response=asyncio.run(print_response_stream(prompt[0]))
+    template = f'<s> [INST] {prompt[0]} [/INST]'
+    # generate(prompt[0])
+    # response=conversations
+    response=asyncio.run(print_response_stream(template))
     print(prompt[0]+"123")
     # ---------------------------------------------
     #更新通過紀錄Passed
-    if "檢核通過" in response:
+    if "檢核成功" in response:
         Passed[part] = 1
     else:
         Passed[part] = 0
