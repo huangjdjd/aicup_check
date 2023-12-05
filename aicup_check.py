@@ -171,11 +171,13 @@ with gr.Blocks() as demo:
     with gr.Row():
         with gr.Column(scale=1):
             labels = gr.Label(
+                    
                     label="完成度",
                     value=updateValue(),
                     container=True,
                     show_label=False,
                     visible=True,
+                    
                     
                     )
             labels.change(fn=updateValue,inputs=None,outputs=labels,every=0.1,)
