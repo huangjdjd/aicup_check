@@ -1,5 +1,6 @@
 import gradio as gr
 import requests
+from typing import Iterator
 import asyncio
 import json
 import sys
@@ -14,31 +15,33 @@ except ImportError:
 HOST = '203.145.216.157:60000'
 URI = f'ws://{HOST}/api/v1/stream'
 
+
 # For reverse-proxied streaming, the remote will likely host with ssl - https://
 # URI = 'https://your-uri-here.trycloudflare.com/api/v1/generate'
 
 async def run(context):
+
     # Note: the selected defaults change from time to time.
     request = {
         'prompt': context,
-        'max_new_tokens': 250,
+        'max_new_tokens': 250,# 250,
         'auto_max_new_tokens': False,
         'max_tokens_second': 0,
-
+ 
         # Generation params. If 'preset' is set to different than 'None', the values
         # in presets/preset-name.yaml are used instead of the individual numbers.
         'preset': 'None',
-        'do_sample': True,
-        'temperature': 0.7,
-        'top_p': 0.1,
+        'do_sample': False,
+        'temperature':0.7,#0.7,
+        'top_p': 0.1,#0.1,
         'typical_p': 1,
         'epsilon_cutoff': 0,  # In units of 1e-4
         'eta_cutoff': 0,  # In units of 1e-4
         'tfs': 1,
         'top_a': 0,
-        'repetition_penalty': 1.18,
+        'repetition_penalty': 1.18,#1.18,
         'repetition_penalty_range': 0,
-        'top_k': 40,
+        'top_k': 40, #40,
         'min_length': 0,
         'no_repeat_ngram_size': 0,
         'num_beams': 1,
@@ -51,7 +54,7 @@ async def run(context):
         'grammar_string': '',
         'guidance_scale': 1,
         'negative_prompt': '',
-
+ 
         'seed': -1,
         'add_bos_token': True,
         'truncation_length': 2048,
@@ -64,8 +67,6 @@ async def run(context):
     async with websockets.connect(URI, ping_interval=None) as websocket:
         await websocket.send(json.dumps(request))
 
-        yield context  # Remove this if you just want to see the reply
-
         while True:
             incoming_data = await websocket.recv()
             incoming_data = json.loads(incoming_data)
@@ -75,83 +76,57 @@ async def run(context):
                     yield incoming_data['text']
                 case 'stream_end':
                     return
-
-
 async def print_response_stream(prompt):
-
     answer=""
     async for response in run(prompt):   
-        # print(response,end='')
         answer+=response
-    # print(answer+"44444")
     return answer
-        # return response
-        # sys.stdout.flush()  # If we don't flush, we won't see tokens in realtime.
-
-    async for response in run(prompt):   
-        print(response, end='')
-        sys.stdout.flush()  # If we don't flush, we won't see tokens in realtime.
-
-    
 
 #紀錄該段落是否已經通過檢測的dict，key 為段落；value 為是否通過(1為通過，0為未通過)
 Passed = {1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0, 8: 0}
 
 #檢查用的function，input_text為要檢核的段落內容；part為第幾段
-#關鍵字: 檢核通過  (如果AI回覆為通過，則務必請AI在reply中加入繁體 "檢核通過" 以方便判定)
+#關鍵字: 檢核通過  (如果AI回覆為通過，則務必請AI在reply中加入繁體 "檢核成功" 以方便判定)
 def check(input_text, part):
     condition = [" ", 
-               "1.字數為100-800字  2.有提到使用的作業系統、語言、套件(函式庫)、預訓練模型、額外資料集等 3.如提到使用預訓練模型及額外資料集，需逐一列出來源",
-               "1.字數為300-1600字 2.說明演算法設計、模型架構與模型參數，包括可能使用的特殊處理方式",
-               "1.字數為250-1600字 2.說明演算法之創新性或者修改外部資源的哪一部分",
-               "1.字數為200-700字 2.說明對資料的處理或擴增的方式，例如對資料可能的刪減、更正或增補",
-               "1.字數為300-1200字 2.明模型的訓練方法與過程",
-               "1.字數為300-1200字 2.分析所使用的模型及其成效，簡述未來可能改進的方向。分析必須附圖，可將幾個成功的和失敗的例子附上並說明之",
+               "1.字數為200-1600  2.有提到使用的作業系統、語言、套件(函式庫)、預訓練模型、額外資料集等 3.如提到使用預訓練模型及額外資料集，需逐一列出來源",
+               "1.字數為500-2800 2.說明演算法設計、模型架構與模型參數，包括可能使用的特殊處理方式",
+               "1.字數為400-2800 2.說明演算法之創新性或者修改外部資源的哪一部分",
+               "1.字數為400-3200 2.說明對資料的處理或擴增的方式，例如對資料可能的刪減、更正或增補",
+               "1.字數為600-2000 2.明模型的訓練方法與過程",
+               "1.字數為600-5000 2.分析所使用的模型及其成效，簡述未來可能改進的方向。可將幾個成功的和失敗的例子附上並說明之",
                "",
-               "1.字數為300-1200字 2.內容規定：參考文獻請以APA格式為主"
+               "1.內容規定：參考文獻請以APA格式為主"
                ]
 
-    prompt = [
-      "等一下將會輸入一些條件與一個段落，請你幫我檢測輸入的段落有沒有符合條件。 \
-      輸入的格式為：條件  +  段落（條件與段落中間以“+”分隔）。 \
-      如果該段落符合條件，請回覆“檢核通過”， \
-      如果沒有通過，請回覆“檢核未通過” \
-      輸入開始: "  
-      + condition[part] + " + " + input_text
-    ]
+    system_prompt = "等一下將會輸入一些條件與一個段落，請你幫我檢測輸入的段落有沒有符合條件。 \
+        輸入的格式為：條件  +  段落（條件與段落中間以“+”分隔）。 \
+        如果該段落符合條件，請馬上回覆\"檢核成功\"， 如果沒有通過，請馬上回覆\"檢核失敗\" ，\
+        不要去回應段落內容，也不要對段落內容做出評論，馬上回覆\"檢核成功\"或\"檢核失敗\"。輸入開始:  "\
+            + condition[part] + " + "
+    
+    prompt = f"<s>[INST] <<SYS>>\n{system_prompt}\n<</SYS>>\n\n {input_text} 輸入結束，不要去回應段落內容，也不要對段落內容做出評論，馬上回覆\"檢核成功\"或\"檢核失敗\"。[/INST]\n"
 
-    # prompt = "地球體積"
     from argparse import ArgumentParser
     parser = ArgumentParser(prog='General debug things')
     parser.add_argument('--msg', type=str)
     args = parser.parse_args()
 
-    
-    template = f"""<bos>Human
-{input_text}<eos>
-<bos>Assistant"""
-    # prompt = "In order to make homemade bread, follow these steps:\n1)"
-    # response = asyncio.run(print_response_stream(template))
-    # response = run(input_text)
-    # ---------------------------------------------
+    response=asyncio.run(print_response_stream(prompt))
 
-    # prompt[0]="請回答下面的問題"+input_text
-    template = f"""<bos>Human
-{prompt[0]}<eos>
-<bos>Assistant"""
-    # prompt = "In order to make homemade bread, follow these steps:\n1)"
-    # response = asyncio.run(print_response_stream(template))
-    # print("11 "+prompt[0]+" 11")
-    
-    response=asyncio.run(print_response_stream(prompt[0]))
-    print(prompt[0]+"123")
-    # ---------------------------------------------
     #更新通過紀錄Passed
-    if "檢核通過" in response:
+    if "檢核成功" in response:
         Passed[part] = 1
+        gr.Info("檢核通過 !")
     else:
         Passed[part] = 0
-    # str(response)
+        gr.Warning("檢核未通過 !")
+    # 全部通過
+    if checkPassed():
+        passed = True
+    else:
+        passed = False
+    
     return str(response)  #回傳AI的回覆
 
 #取得Passed dict裡面的值
@@ -166,12 +141,31 @@ def getProgress():
 #更新所有進度
 def updateValue():
     
-    dict = {"完成度" + getProgress() + "%": 1, 
+    dict = {lTop(): 1, 
                 "壹、環境": getPassed(1), "貳、演算方法與模型架構": getPassed(2), "參、創新性": getPassed(3), 
                 "肆、資料處理": getPassed(4), "伍、訓練方式": getPassed(5), "陸、分析與結論": getPassed(6), "捌、使用的外部資源與參考文獻": getPassed(8)}
     return dict
-    
 
+def lTop():
+    if(checkPassed()):
+        return "[繳交頁面](https://www.aicup.tw/)"
+    else:
+        return "完成度" + getProgress() + "%"
+
+def submitURL():
+    if(passed):
+        return "\n[繳交頁面](https://www.aicup.tw/)"
+    
+    else:
+        return ""
+
+passed = False
+# 檢查是否全部通過
+def checkPassed():
+    for i in Passed.values():
+        if i != 1:
+            return False
+    return True
 
 #主頁面
 with gr.Blocks() as demo:
@@ -191,6 +185,9 @@ with gr.Blocks() as demo:
                     
                     )
             labels.change(fn=updateValue,inputs=None,outputs=labels,every=0.1,)
+            # if(passed):
+            #     gr.Markdown("[繳交頁面](https://www.aicup.tw/)", visible=False)
+            gr.Markdown.change("[繳交頁面](https://www.aicup.tw/)", visible=True)
                 
         with gr.Column(scale=3):
             

@@ -145,7 +145,7 @@ if __name__ == '__main__':
 輸入的格式為：條件  +  段落（條件與段落中間以“+”分隔）。 
 如果該段落符合條件，請回覆「檢核通過」這四個字， 如果沒有通過，請回覆「檢核未通過」 
 輸入開始: \n  ''' + condition[1] + "\n+\n" + input_text + "輸入結束"
-    #prompt = "解釋資料結構"
+    prompt = "解釋資料結構"
     template = f"""<bos>Human
 {prompt}<eos>
 <bos>Assistant"""
