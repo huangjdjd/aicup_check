@@ -187,7 +187,7 @@ with gr.Blocks() as demo:
             labels.change(fn=updateValue,inputs=None,outputs=labels,every=0.1,)
             # if(passed):
             #     gr.Markdown("[繳交頁面](https://www.aicup.tw/)", visible=False)
-            gr.Markdown.change("[繳交頁面](https://www.aicup.tw/)", visible=True)
+            # gr.Markdown.change("[繳交頁面](https://www.aicup.tw/)", visible=True)
                 
         with gr.Column(scale=3):
             
